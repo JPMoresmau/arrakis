@@ -1,3 +1,5 @@
+extern crate rand;
+
 use amethyst::{
     assets::{AssetStorage, Loader, Handle},
     core::transform::Transform,
@@ -7,22 +9,21 @@ use amethyst::{
     window::ScreenDimensions,
     ui::{Anchor, TtfFormat, UiText, UiTransform, LineMode, FontHandle},
 };
+use std::ops::Deref;
+use rand::Rng;
 
-pub const ARENA_HEIGHT: f32 = 640.0;
-pub const ARENA_WIDTH: f32 = 640.0;
-
-pub const STATUS_HEIGHT: f32 = 640.0;
-pub const STATUS_WIDTH: f32 = 240.0;
-
-pub const CELL_HEIGHT: f32 = 32.0;
-pub const CELL_WIDTH: f32 = 32.0;
-
+use crate::config::{ArrakisConfig};
 
 pub struct Arrakis;
 
 impl SimpleState for Arrakis {
     fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         let world = data.world;
+        let config = {
+            let config = &world.read_resource::<ArrakisConfig>();
+            config.deref().clone()
+            //(config.arena.clone(),config.status.clone())
+        };
 
         let sprite_sheet_handle = load_sprite_sheet(world);
 
@@ -34,8 +35,8 @@ impl SimpleState for Arrakis {
         );
 
         initialize_camera(world);
-        initialize_player(world, sprite_sheet_handle, font.clone());
-        initialize_text(world, font);
+        initialize_player(world, sprite_sheet_handle, font.clone(), &config);
+        initialize_text(world, font, &config);
 
     }
 }
@@ -81,6 +82,16 @@ impl Component for Player {
     type Storage = DenseVecStorage<Self>;
 }
 
+pub struct Zone {
+    pub current: i32,
+    pub target: i32,
+    pub cells: [[u8; 20]; 20],
+}
+
+impl Component for Zone {
+    type Storage = DenseVecStorage<Self>;
+}
+
 #[derive(Default)]
 pub struct Status;
 
@@ -89,32 +100,41 @@ impl Component for Status {
 }
 
 
-fn initialize_player(world: &mut World, sprite_sheet: Handle<SpriteSheet>, font: FontHandle) {
+fn initialize_player(world: &mut World, sprite_sheet: Handle<SpriteSheet>, font: FontHandle, config: &ArrakisConfig) {
     let mut transform = Transform::default();
-    transform.set_translation_xyz(ARENA_WIDTH * 0.5, ARENA_HEIGHT *0.5, 0.0);
+    transform.set_translation_xyz(config.arena.width * 0.5, config.arena.height *0.5, 0.0);
 
     let sprite_render = SpriteRender {
         sprite_sheet: sprite_sheet.clone(),
         sprite_number: 2, 
     };
 
+    let mut rng = rand::thread_rng();
+
+    let n1 = rng.gen_range(0, 100);
+    let zone = Zone {
+        current: (n1+50)*10,
+        target: 350,
+        cells: [[0u8; 20]; 20],
+    };
 
     world.create_entity()
         .with(Player::default())
+        .with(zone)
         .with(sprite_render.clone())
         .with(transform)
         .build();
 
     let values_transform = UiTransform::new(
         "StatusValues".to_string(), Anchor::TopRight, Anchor::TopMiddle,
-        -STATUS_WIDTH * 0.2, 0., 1., STATUS_WIDTH * 0.2, STATUS_HEIGHT,
+        -config.status.values_width, 0., 1., config.status.values_width, config.status.height,
     );
 
     let mut values_uit = UiText::new(
             font.clone(),
             "names".to_string(),
             [1., 1., 1., 1.],
-            32.,
+            config.status.font_size,
         );
     values_uit.line_mode=LineMode::Wrap;
     values_uit.align=Anchor::TopRight;
@@ -149,23 +169,26 @@ fn load_sprite_sheet(world: &mut World) -> Handle<SpriteSheet> {
     )
 }
 
-fn initialize_text(world: &mut World, font: FontHandle) {
+fn initialize_text(world: &mut World, font: FontHandle, config: &ArrakisConfig) {
 
     let names_transform = UiTransform::new(
         "StatusNames".to_string(), Anchor::TopRight, Anchor::TopMiddle,
-        -STATUS_WIDTH, 0., 1., STATUS_WIDTH * 0.8, STATUS_HEIGHT,
+        -config.status.width, 0., 1., config.status.text_width, config.status.height,
     );
-    let names = format!("{}\n{}\n{}\n{}", 
+    let names = format!("{}\n{}\n{}\n{}\n{}\n{}", 
                     "Strength", 
                     "Magic",
                     "Charisma",
-                    "Gold",);
+                    "Gold",
+                    "Current Zone",
+                    "Target Zone",
+                    );
 
     let mut names_uit = UiText::new(
             font.clone(),
             names.to_string(),
             [1., 1., 1., 1.],
-            32.,
+            config.status.font_size,
         );
     names_uit.line_mode=LineMode::Wrap;
     names_uit.align=Anchor::TopLeft;

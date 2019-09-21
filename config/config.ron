@@ -1,0 +1,17 @@
+(
+    arena: (
+        height: 640.0,
+        width: 640.0,
+    ),
+    cell: (
+        height: 32.0,
+        width: 32.0,
+    ),
+    status: (
+        height: 640.0,
+        width: 240.0,
+        values_width: 60.0,
+        text_width: 200.0,
+        font_size: 28.0,
+    )
+)

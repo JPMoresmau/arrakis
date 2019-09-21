@@ -13,8 +13,10 @@ use amethyst::{
 };
 
 mod arrakis;
+mod config;
 mod systems;
 use crate::arrakis::Arrakis;
+use crate::config::ArrakisConfig;
 
 fn main() -> amethyst::Result<()> {
     amethyst::start_logger(Default::default());
@@ -28,6 +30,8 @@ fn main() -> amethyst::Result<()> {
 
     let input_bundle = InputBundle::<StringBindings>::new()
         .with_bindings_from_file(binding_path)?;
+
+    let arr_config = ArrakisConfig::load(config_dir.join("config.ron"));
 
     let game_data = GameDataBuilder::default()
         .with_bundle(
@@ -46,7 +50,9 @@ fn main() -> amethyst::Result<()> {
         .with(systems::PlayerSystem, "player_system",&["input_system"])
         ;
 
-    let mut game = Application::new(assets_dir, Arrakis, game_data)?;
+    let mut game = Application::build(assets_dir, Arrakis)?
+        .with_resource(arr_config)
+        .build(game_data)?;
     game.run();
 
     Ok(())
