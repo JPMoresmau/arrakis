@@ -1,0 +1,9 @@
+[package]
+name = "arrakis"
+version = "0.1.0"
+authors = ["JP Moresmau"]
+edition = "2018"
+
+[dependencies.amethyst]
+version = "0.12"
+features = ["vulkan"]
