@@ -1,6 +1,5 @@
 use amethyst::{
     core::transform::TransformBundle,
-    ecs::prelude::{ReadExpect, Resources, SystemData},
     input::{InputBundle, StringBindings},
     prelude::*,
     renderer::{

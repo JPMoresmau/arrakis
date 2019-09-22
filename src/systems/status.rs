@@ -1,7 +1,5 @@
-use amethyst::core::{Transform};
-use amethyst::ecs::{Join, Read, ReadStorage, System, SystemData, World, WriteStorage};
-use amethyst::input::{InputHandler, StringBindings};
-use amethyst::ui::{Anchor, TtfFormat, UiText, UiTransform};
+use amethyst::ecs::{Join, ReadStorage, System, WriteStorage};
+use amethyst::ui::{UiText};
 
 use crate::arrakis::{Player,Status,Zone};
 
@@ -11,7 +9,7 @@ impl<'s> System<'s> for StatusSystem {
     type SystemData = (
         ReadStorage<'s, Player>,
         ReadStorage<'s, Zone>,
-        ReadStorage<'s,Status>,
+        ReadStorage<'s, Status>,
         WriteStorage<'s, UiText>,
     );
 

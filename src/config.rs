@@ -11,6 +11,8 @@ pub struct ArrakisConfig {
 pub struct ArenaConfig {
     pub height: f32,
     pub width: f32,
+    pub wall_threshold: i32,
+    pub cell_count: usize,
 }
 
 impl Default for ArenaConfig {
@@ -18,6 +20,8 @@ impl Default for ArenaConfig {
         ArenaConfig {
             height: 640.0,
             width: 640.0,
+            wall_threshold: 5,
+            cell_count: 20,
         }
     }
 }
