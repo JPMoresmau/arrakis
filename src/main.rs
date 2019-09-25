@@ -14,7 +14,7 @@ use amethyst::{
 mod arrakis;
 mod config;
 mod systems;
-use crate::arrakis::Arrakis;
+use crate::arrakis::{InterTitle};
 use crate::config::ArrakisConfig;
 
 fn main() -> amethyst::Result<()> {
@@ -46,10 +46,10 @@ fn main() -> amethyst::Result<()> {
         .with_bundle(input_bundle)?
         .with_bundle(UiBundle::<StringBindings>::new())?
         .with(systems::StatusSystem, "status_system",&[])
-        .with(systems::PlayerSystem, "player_system",&["input_system"])
+        .with(systems::PlayerSystem::new(), "player_system",&["input_system"])
         ;
 
-    let mut game = Application::build(assets_dir, Arrakis)?
+    let mut game = Application::build(assets_dir, InterTitle::start())?
         .with_resource(arr_config)
         .build(game_data)?;
     game.run();
