@@ -1,7 +1,7 @@
 use amethyst::ecs::{Join, ReadStorage, System, WriteStorage};
 use amethyst::ui::{UiText};
 
-use crate::arrakis::{Player,Status,Zone};
+use crate::components::{Player,Status,Zone,Encounter,CellType};
 
 pub struct StatusSystem;
 
@@ -10,6 +10,7 @@ impl<'s> System<'s> for StatusSystem {
         ReadStorage<'s, Player>,
         ReadStorage<'s, Zone>,
         ReadStorage<'s, Status>,
+        ReadStorage<'s, Encounter>,
         WriteStorage<'s, UiText>,
     );
 
@@ -17,6 +18,7 @@ impl<'s> System<'s> for StatusSystem {
         players,
         zones,
         targets,
+        encounters,
         mut ui_texts,
     ): Self::SystemData) {
         for (player,zone) in (&players,&zones).join() {
@@ -28,6 +30,15 @@ impl<'s> System<'s> for StatusSystem {
                     player.gold,
                     zone.current,
                     zone.target);
+            }
+            for (_, utext) in (&encounters, &mut ui_texts).join(){
+                let s = match zone.current_type {
+                    CellType::Fountain => "Fountain",
+                    CellType::Armourer => "Armourer",
+                    CellType::Magician => "Magician",
+                    _ => "",
+                };
+                utext.text = String::from(s);
             }
         }
     }

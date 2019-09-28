@@ -6,7 +6,9 @@ use amethyst::shred::{DynamicSystemData, Resources};
 use amethyst::shrev::{EventChannel, ReaderId};
 use std::ops::Deref;
 
-use crate::arrakis::{build_zone, perform_move, show_walls, Cell, Player, Zone};
+use crate::arrakis::{perform_move};
+use crate::build::{build_zone, show_walls};
+use crate::components::{Cell, Player, Zone, CellType};
 use crate::config::ArrakisConfig;
 
 pub struct PlayerSystem {
@@ -63,7 +65,7 @@ impl<'s> System<'s> for PlayerSystem {
                             perform_move(zone, transform, player, confr);
 
                         } else {
-                            if !zone.cells[nx][ny] {
+                            if zone.cells[nx][ny] > CellType::Inhabitant {
                                 zone.cell.0 = nx;
                                 zone.cell.1 = ny;
                                 perform_move(zone, transform, player, confr);

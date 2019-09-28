@@ -5,6 +5,10 @@ pub struct ArrakisConfig {
     pub arena: ArenaConfig,
     pub cell: CellConfig,
     pub status: StatusConfig,
+    pub gold: u32,
+    pub armourer: ArmourerConfig,
+    pub magician: MagicianConfig,
+    pub inhabitants: usize,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -61,3 +65,40 @@ impl Default for StatusConfig {
         }
     }
 }
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct ArmourerConfig {
+    pub charisma: u32,
+    pub magic: u32,
+    pub gold: u32,
+}
+
+impl Default for ArmourerConfig {
+    fn default() -> Self {
+        ArmourerConfig {
+            charisma: 10,
+            magic: 1,
+            gold: 20,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct MagicianConfig {
+    pub charisma: u32,
+    pub magic: u32,
+    pub gold: u32,
+    pub strength: u32,
+}
+
+impl Default for MagicianConfig {
+    fn default() -> Self {
+        MagicianConfig {
+            magic: 10,
+            gold: 20,
+            strength: 50,
+            charisma: 20,
+        }
+    }
+}
+

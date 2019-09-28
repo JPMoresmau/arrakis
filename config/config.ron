@@ -2,7 +2,7 @@
     arena: (
         height: 640.0,
         width: 640.0,
-        wall_threshold: 4,
+        wall_threshold: 5,
         cell_count: 20,
     ),
     cell: (
@@ -15,5 +15,18 @@
         values_width: 60.0,
         text_width: 200.0,
         font_size: 28.0,
-    )
+    ),
+    gold: 40,
+    armourer: (
+        charisma: 10,
+        magic: 1,
+        gold: 20,
+    ),
+    magician: (
+        magic: 10,
+        gold: 20,
+        strength: 50,
+        charisma: 20,
+    ),
+    inhabitants: 5,
 )

@@ -12,9 +12,12 @@ use amethyst::{
 };
 
 mod arrakis;
+mod build;
 mod config;
+mod states;
 mod systems;
-use crate::arrakis::{InterTitle};
+mod components;
+use crate::states::{InterTitle};
 use crate::config::ArrakisConfig;
 
 fn main() -> amethyst::Result<()> {
