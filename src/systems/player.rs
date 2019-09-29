@@ -6,9 +6,9 @@ use amethyst::shred::{DynamicSystemData, Resources};
 use amethyst::shrev::{EventChannel, ReaderId};
 use std::ops::Deref;
 
-use crate::arrakis::{perform_move};
-use crate::build::{build_zone, show_walls};
-use crate::components::{Cell, Player, Zone, CellType};
+use crate::arrakis::{perform_move, move_inhabitants};
+use crate::build::{build_zone, show_walls, place_inhabitants};
+use crate::components::{Cell, Player, Zone, CellType, Inhabitant, Action};
 use crate::config::ArrakisConfig;
 
 pub struct PlayerSystem {
@@ -28,6 +28,7 @@ impl<'s> System<'s> for PlayerSystem {
         WriteStorage<'s, Zone>,
         ReadStorage<'s, Cell>,
         WriteStorage<'s, Tint>,
+        ReadStorage<'s,Inhabitant>,
         Read<'s, EventChannel<InputEvent<StringBindings>>>,
         Read<'s, ArrakisConfig>,
     );
@@ -42,10 +43,13 @@ impl<'s> System<'s> for PlayerSystem {
 
     fn run(
         &mut self,
-        (mut transforms, mut players, mut zones, cells, mut tints, event, config): Self::SystemData,
+        (mut transforms, mut players, mut zones, cells, mut tints, inhabitants, event, config): Self::SystemData,
     ) {
         for event in event.read(self.reader.as_mut().unwrap()) {
             if let InputEvent::ActionPressed(action) = event {
+                let mut should_move_inhabitants = false;
+                let mut should_place_inhabitants = false;
+                let confr=&config.deref();
                 for (transform, player, zone) in (&mut transforms, &mut players, &mut zones).join(){
                     let (nz, nx, ny) = match action.as_ref() {
                         "right" => move_right(zone, &config),
@@ -55,7 +59,7 @@ impl<'s> System<'s> for PlayerSystem {
                         _ => (zone.current, zone.cell.0, zone.cell.1),
                     };
                     if zone.cell.0 != nx || zone.cell.1 != ny || zone.current != nz {
-                        let confr=&config.deref();
+                       
                         if zone.current != nz {
                             zone.current = nz;
                             zone.cell.0 = nx;
@@ -63,16 +67,44 @@ impl<'s> System<'s> for PlayerSystem {
                             build_zone(zone, confr);
                             show_walls(&zone, &cells, &mut tints);
                             perform_move(zone, transform, player, confr);
-
+                            should_place_inhabitants = true;
+                            
                         } else {
                             if zone.cells[nx][ny] > CellType::Inhabitant {
                                 zone.cell.0 = nx;
                                 zone.cell.1 = ny;
                                 perform_move(zone, transform, player, confr);
+                                should_move_inhabitants = player.action != Some(Action::Charisma);
                             }
+                        }
+                        player.action=None;
+                    } else {
+                        match action.as_ref() {
+                            "charisma" if player.charisma > 0 => {
+                                player.charisma -= 1;
+                                player.action=Some(Action::Charisma);
+                                },
+                            "magic" if player.magic>0 => {
+                                player.magic -= 1;
+                                player.action=Some(Action::Magic);
+                            },
+                            "power" => player.action=Some(Action::Power),
+                            _ => (),
                         }
                     }
                 }
+                if should_place_inhabitants {
+                     for (_, zone) in (&mut players, &mut zones).join(){
+                         place_inhabitants(zone, &inhabitants, &mut transforms, confr);
+                     }
+                }
+                if should_move_inhabitants {
+                    for (_, zone) in (&mut players, &mut zones).join(){
+                        move_inhabitants(zone, &inhabitants, &mut transforms, confr);
+                    }
+                }
+                
+
             }
         }
     }

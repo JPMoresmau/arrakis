@@ -2,12 +2,21 @@ use amethyst::{
     ecs::prelude::{Component, DenseVecStorage, NullStorage},
 };
 
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+pub enum Action {
+    Charisma,
+    Magic,
+    Power,
+}
+
 #[derive(Debug)]
 pub struct Player {
     pub strength: u32,
     pub magic: u32,
     pub charisma: u32,
     pub gold: u32,
+    pub action: Option<Action>,
 }
 
 impl Default for Player {
@@ -17,6 +26,7 @@ impl Default for Player {
             magic: 5,
             charisma: 5,
             gold: 100,
+            action: None,
         }
     }
 

@@ -267,7 +267,7 @@ pub fn build_zone(zone: &mut Zone, config: &ArrakisConfig){
                 if x!=zone.cell.0 || y!=zone.cell.1 {
                     empties.push((x,y));
                 }
-                set_cell_type(zone,(x,y),config);
+                set_cell_type(zone,&(x,y),config);
             }
         }
     }   
@@ -279,7 +279,7 @@ pub fn build_zone(zone: &mut Zone, config: &ArrakisConfig){
     }
 }
 
-fn place_inhabitants<'s>(zone: &Zone,inhabitants: &ReadStorage<'s,Inhabitant>,positions: &mut WriteStorage<'s,Transform>, config: &ArrakisConfig){
+pub fn place_inhabitants<'s>(zone: &Zone,inhabitants: &ReadStorage<'s,Inhabitant>,positions: &mut WriteStorage<'s,Transform>, config: &ArrakisConfig){
 
     for (&(x,y),(_,transform)) in zone.inhabitants.iter().zip((inhabitants,positions).join()){
         transform.set_translation_xyz(
@@ -289,8 +289,8 @@ fn place_inhabitants<'s>(zone: &Zone,inhabitants: &ReadStorage<'s,Inhabitant>,po
     }
 }
 
-fn set_cell_type(zone: &mut Zone, pos: (usize,usize), config: &ArrakisConfig){
-    let (x,y) = pos;
+pub fn set_cell_type(zone: &mut Zone, pos: &(usize,usize), config: &ArrakisConfig){
+    let (x,y) = *pos;
     let mut sc = 0;
     for x1 in get_neighbours_range(x,config.arena.cell_count){
         for y1 in get_neighbours_range(y,config.arena.cell_count){
