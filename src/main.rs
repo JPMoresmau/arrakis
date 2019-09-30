@@ -49,7 +49,8 @@ fn main() -> amethyst::Result<()> {
         .with_bundle(input_bundle)?
         .with_bundle(UiBundle::<StringBindings>::new())?
         .with(systems::StatusSystem, "status_system",&[])
-        .with(systems::PlayerSystem::new(), "player_system",&["input_system"])
+        .with(systems::MoveSystem::new(), "move_system",&["input_system"])
+        .with(systems::ActionSystem::new(), "action_system",&["input_system"])
         ;
 
     let mut game = Application::build(assets_dir, InterTitle::start())?

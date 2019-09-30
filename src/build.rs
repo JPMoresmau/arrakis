@@ -3,7 +3,7 @@ extern crate rand;
 use amethyst::{
     assets::{AssetStorage, Loader, Handle},
     core::transform::Transform,
-    ecs::{Join,ReadStorage,WriteStorage},
+    ecs::{Join,ReadStorage,WriteStorage,Entities},
     prelude::*,
     renderer::{Camera, ImageFormat, SpriteRender, SpriteSheet, SpriteSheetFormat, Texture, palette::Srgba,
         resources::Tint,},
@@ -83,10 +83,11 @@ pub fn initialize_player(world: &mut World, sprite_sheet: Handle<SpriteSheet>, f
     let mut zone = Zone {
         current: (n1+50)*10,
         target: 350,
-        cells: [[CellType::Empty; 20]; 20],
+        cells: [[0; 20]; 20],
         cell: (config.arena.cell_count /2 , config.arena.cell_count / 2),
         current_type: CellType::Empty,
         inhabitants: vec!(),
+        shields: vec!(),
     };
     
     build_zone(&mut zone, config);
@@ -106,7 +107,13 @@ pub fn initialize_player(world: &mut World, sprite_sheet: Handle<SpriteSheet>, f
     }
 
     world.create_entity()
-        .with(Player::default())
+        .with(Player{
+            charisma: config.player.charisma,
+            gold: config.player.gold,
+            magic: config.player.magic,
+            strength: config.player.strength,
+            action: None,
+        })
         .with(zone)
         .with(sprite_render)
         .with(transform)
@@ -162,18 +169,6 @@ pub fn set_player_position(zone: &Zone, transform: &mut Transform, config: &Arra
          0.0);
 }
 
-fn get_neighbours_range(x: usize, cell_count: usize) -> Vec<usize> {
-    if x > 0 {
-        if x < cell_count-1 {
-            vec!(x-1, x, x+1)
-        } else {
-             vec!(x-1, x)
-        }
-    } else {
-        vec!(x , x + 1)
-    }
-}
-
 pub fn load_sprite_sheet(world: &mut World) -> Handle<SpriteSheet> {
     let loader = world.read_resource::<Loader>();
     let texture_handle = {
@@ -227,7 +222,7 @@ pub fn initialize_text(world: &mut World, font: FontHandle, config: &ArrakisConf
         .with(names_uit)
         .build();
 }
-
+/*
 pub fn is_next_to_inhabitant(zone: &Zone, config: &ArrakisConfig) -> bool {
     let (x,y) = zone.cell;
     
@@ -241,7 +236,7 @@ pub fn is_next_to_inhabitant(zone: &Zone, config: &ArrakisConfig) -> bool {
         }
     }
     false
-}
+}*/
 
 pub fn build_zone(zone: &mut Zone, config: &ArrakisConfig){
     let mut n = 0;
@@ -257,24 +252,23 @@ pub fn build_zone(zone: &mut Zone, config: &ArrakisConfig){
             n += 1;
             let wall = c < config.arena.wall_threshold && !(x == zone.cell.0 && y == zone.cell.1);
             //  println!("x: {}, y: {}, wall: {}", x, y, wall);
-            zone.cells[x][y] = if wall {CellType::Wall} else {CellType::Empty};
+            zone.cells[x][y] = if wall {2} else {0};
         }
     }
     let mut empties = vec!();
     for x in 0.. config.arena.cell_count {
         for y in 0 .. config.arena.cell_count {
-            if zone.cells[x][y] == CellType::Empty{
+            if zone.cells[x][y] == 0 {
                 if x!=zone.cell.0 || y!=zone.cell.1 {
                     empties.push((x,y));
                 }
-                set_cell_type(zone,&(x,y),config);
             }
         }
     }   
     zone.inhabitants.clear();
     for (x,y) in empties
         .choose_multiple(&mut rand::thread_rng(), config.inhabitants){
-            zone.cells[*x][*y] = CellType::Inhabitant;
+            zone.cells[*x][*y] = 18;
             zone.inhabitants.push((*x,*y));
     }
 }
@@ -289,30 +283,11 @@ pub fn place_inhabitants<'s>(zone: &Zone,inhabitants: &ReadStorage<'s,Inhabitant
     }
 }
 
-pub fn set_cell_type(zone: &mut Zone, pos: &(usize,usize), config: &ArrakisConfig){
-    let (x,y) = *pos;
-    let mut sc = 0;
-    for x1 in get_neighbours_range(x,config.arena.cell_count){
-        for y1 in get_neighbours_range(y,config.arena.cell_count){
-            if x!=x1 || y!=y1 {
-                if zone.cells[x1][y1] == CellType::Wall {
-                    sc += 1;
-                }
-            }
-        }
-    }
-    zone.cells[x][y] = match sc {
-        0 => CellType::Gold,
-        5 => CellType::Fountain,
-        6 => CellType::Armourer,
-        7 => CellType::Magician,
-        _ => CellType::Empty,
-    };
-}
+
 
 pub fn show_walls<'s>(zone: &Zone, cells: &ReadStorage<'s,Cell>, tints: &mut WriteStorage<'s,Tint>){
     for (cell,tint) in (cells,tints).join(){
-        if zone.cells[cell.position.0][cell.position.1] == CellType::Wall{
+        if zone.cells[cell.position.0][cell.position.1] == 2{
             tint.0.alpha = 1.0;
         } else {
             tint.0.alpha = 0.0;
@@ -371,3 +346,4 @@ pub fn initialize_inter_text(world: &mut World, font: FontHandle, message: &str,
         .with(names_uit)
         .build();
 }
+

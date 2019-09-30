@@ -1,5 +1,6 @@
 use amethyst::{
     ecs::prelude::{Component, DenseVecStorage, NullStorage},
+    ecs::world::Index,
 };
 
 
@@ -38,8 +39,6 @@ impl Component for Player {
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub enum CellType {
-    Wall,
-    Inhabitant,
     Empty,
     Fountain,
     Armourer,
@@ -51,10 +50,11 @@ pub enum CellType {
 pub struct Zone {
     pub current: i32,
     pub target: i32,
-    pub cells: [[CellType; 20]; 20],
+    pub cells: [[i32; 20]; 20],
     pub cell: (usize,usize),
     pub current_type: CellType,
     pub inhabitants: Vec<(usize,usize)>,
+    pub shields: Vec<Index>,
 }
 
 impl Component for Zone {
@@ -92,3 +92,11 @@ impl Component for Inhabitant {
     type Storage = NullStorage<Self>;
 }
 
+#[derive(Default)]
+pub struct Shield{
+    pub position: (usize,usize),
+}
+
+impl Component for Shield {
+    type Storage = DenseVecStorage<Self>;
+}

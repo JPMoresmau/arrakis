@@ -29,4 +29,10 @@
         charisma: 20,
     ),
     inhabitants: 5,
+    player: (
+        magic: 5,
+        gold: 100,
+        strength: 100,
+        charisma: 10,
+    )
 )

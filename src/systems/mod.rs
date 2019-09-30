@@ -1,5 +1,7 @@
+mod actions;
+mod moves;
 mod status;
-mod player;
 
+pub use self::actions::ActionSystem;
+pub use self::moves::MoveSystem;
 pub use self::status::StatusSystem;
-pub use self::player::PlayerSystem;

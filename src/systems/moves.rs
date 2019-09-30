@@ -1,27 +1,27 @@
 use amethyst::core::Transform;
-use amethyst::ecs::{Join, Read, ReadStorage, System, WriteStorage};
+use amethyst::ecs::{Join, Read, ReadStorage, System, WriteStorage,Entities};
 use amethyst::input::{InputEvent, StringBindings};
 use amethyst::renderer::resources::Tint;
 use amethyst::shred::{DynamicSystemData, Resources};
 use amethyst::shrev::{EventChannel, ReaderId};
 use std::ops::Deref;
 
-use crate::arrakis::{perform_move, move_inhabitants};
+use crate::arrakis::{perform_move, move_inhabitants, clear_shields};
 use crate::build::{build_zone, show_walls, place_inhabitants};
-use crate::components::{Cell, Player, Zone, CellType, Inhabitant, Action};
+use crate::components::{Cell, Player, Zone, Inhabitant, Action};
 use crate::config::ArrakisConfig;
 
-pub struct PlayerSystem {
+pub struct MoveSystem {
     reader: Option<ReaderId<InputEvent<StringBindings>>>,
 }
 
-impl PlayerSystem {
+impl MoveSystem {
     pub fn new() -> Self {
         Self { reader: None }
     }
 }
 
-impl<'s> System<'s> for PlayerSystem {
+impl<'s> System<'s> for MoveSystem {
     type SystemData = (
         WriteStorage<'s, Transform>,
         WriteStorage<'s, Player>,
@@ -29,6 +29,7 @@ impl<'s> System<'s> for PlayerSystem {
         ReadStorage<'s, Cell>,
         WriteStorage<'s, Tint>,
         ReadStorage<'s,Inhabitant>,
+        Entities<'s>,
         Read<'s, EventChannel<InputEvent<StringBindings>>>,
         Read<'s, ArrakisConfig>,
     );
@@ -43,7 +44,7 @@ impl<'s> System<'s> for PlayerSystem {
 
     fn run(
         &mut self,
-        (mut transforms, mut players, mut zones, cells, mut tints, inhabitants, event, config): Self::SystemData,
+        (mut transforms, mut players, mut zones, cells, mut tints, inhabitants, entities, event, config): Self::SystemData,
     ) {
         for event in event.read(self.reader.as_mut().unwrap()) {
             if let InputEvent::ActionPressed(action) = event {
@@ -64,13 +65,14 @@ impl<'s> System<'s> for PlayerSystem {
                             zone.current = nz;
                             zone.cell.0 = nx;
                             zone.cell.1 = ny;
+                            clear_shields(zone, &entities);
                             build_zone(zone, confr);
                             show_walls(&zone, &cells, &mut tints);
                             perform_move(zone, transform, player, confr);
                             should_place_inhabitants = true;
                             
                         } else {
-                            if zone.cells[nx][ny] > CellType::Inhabitant {
+                            if zone.cells[nx][ny] < 2 {
                                 zone.cell.0 = nx;
                                 zone.cell.1 = ny;
                                 perform_move(zone, transform, player, confr);
@@ -78,20 +80,7 @@ impl<'s> System<'s> for PlayerSystem {
                             }
                         }
                         player.action=None;
-                    } else {
-                        match action.as_ref() {
-                            "charisma" if player.charisma > 0 => {
-                                player.charisma -= 1;
-                                player.action=Some(Action::Charisma);
-                                },
-                            "magic" if player.magic>0 => {
-                                player.magic -= 1;
-                                player.action=Some(Action::Magic);
-                            },
-                            "power" => player.action=Some(Action::Power),
-                            _ => (),
-                        }
-                    }
+                    } 
                 }
                 if should_place_inhabitants {
                      for (_, zone) in (&mut players, &mut zones).join(){
