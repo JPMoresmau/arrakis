@@ -9,5 +9,6 @@ rand = "0.7.2"
 serde = { version = "1.0.101", features = ["derive"] }
 
 [dependencies.amethyst]
-version = "0.12"
+version = "0.13"
+git = "https://github.com/amethyst/amethyst.git"
 features = ["vulkan"]

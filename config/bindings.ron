@@ -9,5 +9,7 @@
     "charisma": [[Key(C)]],
     "magic": [[Key(M)]],
     "power": [[Key(P)]],
+    "restart": [[Key(R)]],
+    "help": [[Key(F1)]],
   },
 )

@@ -115,19 +115,24 @@ pub fn move_inhabitants<'s>(zone: &mut Zone,inhabitants: &ReadStorage<'s,Inhabit
 fn move_inhabitant(zone : &mut Zone, pos: &(usize, usize), config: &ArrakisConfig) -> (usize,usize) {
     let (xp,yp) = zone.cell;
     let (x,y) = *pos;
-    if x<=xp && y<=yp && x<config.arena.cell_count-1 && y<config.arena.cell_count-1 && (x+1,y+1)!=(xp,yp) && zone.cells[x+1][y+1] == 0 {
+    if x<=xp && y<=yp && x<config.arena.cell_count-1 && y<config.arena.cell_count-1 && can_move_to(zone,x+1,y+1) {
         return set_inhabitant_zone(zone,pos,(x+1,y+1),config);
     }
-    if x<=xp && y>=yp && x<config.arena.cell_count-1 && y>0 && (x+1,y-1)!=(xp,yp) && zone.cells[x+1][y-1] == 0 {
+    if x<=xp && y>=yp && x<config.arena.cell_count-1 && y>0 && can_move_to(zone,x+1,y-1) {
         return set_inhabitant_zone(zone,pos,(x+1,y-1),config);
     }
-    if x>=xp && y>=yp && x>0 && y>0 && (x-1,y-1)!=(xp,yp) && zone.cells[x-1][y-1] == 0 {
+    if x>=xp && y>=yp && x>0 && y>0 && can_move_to(zone,x-1,y-1) {
         return set_inhabitant_zone(zone,pos,(x-1,y-1),config);
     }
-    if x>=xp && y<=yp && x>0 && (x-1,y+1)!=(xp,yp) && y<config.arena.cell_count-1 && zone.cells[x-1][y+1] == 0 {
+    if x>=xp && y<=yp && x>0 && y<config.arena.cell_count-1 && can_move_to(zone,x-1,y+1) {
         return set_inhabitant_zone(zone,pos,(x-1,y+1),config);
     }
     *pos
+}
+
+fn can_move_to(zone: &Zone, x: usize, y: usize) ->bool{
+    let (xp,yp) = zone.cell;
+    (x,y)!=(xp,yp) && zone.cells[x][y] == 0 && (zone.current != zone.target || x!=10 || y!=10)
 }
 
 fn set_inhabitant_zone(zone : &mut Zone, pos: &(usize, usize),new_pos:(usize,usize), _config: &ArrakisConfig) -> (usize,usize){
@@ -158,6 +163,34 @@ pub fn add_shield<'s>(zone: &mut Zone, pos: (usize,usize), entities: &Entities<'
    
     zone.cells[pos.0][pos.1] = 1;
     zone.shields.push(shield.id());
+}
+
+pub fn need_add_wizard(zone: &Zone) -> bool {
+    zone.current == zone.target && zone.wizard.is_none()
+}
+
+pub fn add_wizard<'s>(zone: &mut Zone, entities: &Entities<'s>, sprite_sheet: &Handle<SpriteSheet>, 
+    transforms: &mut WriteStorage<'s, Transform>, sprites: &mut WriteStorage<'s, SpriteRender>, config: &ArrakisConfig ){
+        if need_add_wizard(zone) {
+            let mut transform = Transform::default();
+            transform.set_translation_xyz(
+                10.0 as f32 * config.cell.width + config.cell.width * 0.5, 
+                10.0 as f32 * config.cell.height + config.cell.height * 0.5, 
+                0.0);
+
+            let sprite_render = SpriteRender {
+                sprite_sheet: sprite_sheet.clone(),
+                sprite_number: 3, 
+            };
+
+            let wizard = entities.build_entity()
+                .with(transform, transforms)
+                .with(sprite_render,sprites)
+                .build();
+            zone.wizard = Some(wizard.id());
+            
+               
+        } 
 }
 
 

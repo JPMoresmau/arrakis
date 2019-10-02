@@ -7,8 +7,16 @@ use amethyst::{
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub enum Action {
     Charisma,
-    Magic,
-    Power,
+    //Magic,
+    //Power,
+    Restart,
+    Help,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CurrentState {
+    Intertext,
+    Gameplay,
 }
 
 #[derive(Debug)]
@@ -18,6 +26,7 @@ pub struct Player {
     pub charisma: u32,
     pub gold: u32,
     pub action: Option<Action>,
+    pub current_state: CurrentState,
 }
 
 impl Default for Player {
@@ -28,6 +37,7 @@ impl Default for Player {
             charisma: 5,
             gold: 100,
             action: None,
+            current_state: CurrentState::Gameplay,
         }
     }
 
@@ -55,6 +65,7 @@ pub struct Zone {
     pub current_type: CellType,
     pub inhabitants: Vec<(usize,usize)>,
     pub shields: Vec<Index>,
+    pub wizard: Option<Index>,
 }
 
 impl Component for Zone {

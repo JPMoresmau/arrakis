@@ -1,14 +1,15 @@
 use amethyst::core::Transform;
-use amethyst::ecs::{Join, Read, ReadStorage, System, WriteStorage,Entities};
+use amethyst::ecs::{Join, Read, ReadStorage, System, WriteStorage,Entities, World};
 use amethyst::input::{InputEvent, StringBindings};
-use amethyst::renderer::resources::Tint;
-use amethyst::shred::{DynamicSystemData, Resources};
+use amethyst::renderer::{
+        resources::Tint,SpriteRender};
+use amethyst::shred::{DynamicSystemData};
 use amethyst::shrev::{EventChannel, ReaderId};
 use std::ops::Deref;
 
-use crate::arrakis::{perform_move, move_inhabitants, clear_shields};
+use crate::arrakis::{perform_move, move_inhabitants, clear_shields, add_wizard, need_add_wizard};
 use crate::build::{build_zone, show_walls, place_inhabitants};
-use crate::components::{Cell, Player, Zone, Inhabitant, Action};
+use crate::components::{Cell, Player, Zone, Inhabitant, Action, CurrentState};
 use crate::config::ArrakisConfig;
 
 pub struct MoveSystem {
@@ -29,70 +30,95 @@ impl<'s> System<'s> for MoveSystem {
         ReadStorage<'s, Cell>,
         WriteStorage<'s, Tint>,
         ReadStorage<'s,Inhabitant>,
+        WriteStorage<'s, SpriteRender>,
         Entities<'s>,
         Read<'s, EventChannel<InputEvent<StringBindings>>>,
         Read<'s, ArrakisConfig>,
     );
 
-    fn setup(&mut self, res: &mut Resources) {
-        <Self::SystemData as DynamicSystemData>::setup(&self.accessor(), res);
+    fn setup(&mut self, w: &mut World) {
+        <Self::SystemData as DynamicSystemData>::setup(&self.accessor(), w);
         self.reader = Some(
-            res.fetch_mut::<EventChannel<InputEvent<StringBindings>>>()
+            w.fetch_mut::<EventChannel<InputEvent<StringBindings>>>()
                 .register_reader(),
         );
     }
 
     fn run(
         &mut self,
-        (mut transforms, mut players, mut zones, cells, mut tints, inhabitants, entities, event, config): Self::SystemData,
+        (mut transforms, mut players, mut zones, cells, mut tints, inhabitants, mut sprites, entities, event, config): Self::SystemData,
     ) {
         for event in event.read(self.reader.as_mut().unwrap()) {
             if let InputEvent::ActionPressed(action) = event {
                 let mut should_move_inhabitants = false;
                 let mut should_place_inhabitants = false;
+                let mut should_add_wizard = false;
                 let confr=&config.deref();
                 for (transform, player, zone) in (&mut transforms, &mut players, &mut zones).join(){
-                    let (nz, nx, ny) = match action.as_ref() {
-                        "right" => move_right(zone, &config),
-                        "left" => move_left(zone, &config),
-                        "up" => move_up(zone, &config),
-                        "down" => move_down(zone, &config),
-                        _ => (zone.current, zone.cell.0, zone.cell.1),
-                    };
-                    if zone.cell.0 != nx || zone.cell.1 != ny || zone.current != nz {
-                       
-                        if zone.current != nz {
-                            zone.current = nz;
-                            zone.cell.0 = nx;
-                            zone.cell.1 = ny;
-                            clear_shields(zone, &entities);
-                            build_zone(zone, confr);
-                            show_walls(&zone, &cells, &mut tints);
-                            perform_move(zone, transform, player, confr);
-                            should_place_inhabitants = true;
-                            
-                        } else {
-                            if zone.cells[nx][ny] < 2 {
+                    if player.current_state ==  CurrentState::Gameplay {
+                    
+                        let (nz, nx, ny) = match action.as_ref() {
+                            "right" => move_right(zone, &config),
+                            "left" => move_left(zone, &config),
+                            "up" => move_up(zone, &config),
+                            "down" => move_down(zone, &config),
+                            _ => (zone.current, zone.cell.0, zone.cell.1),
+                        };
+                        if zone.cell.0 != nx || zone.cell.1 != ny || zone.current != nz {
+                        
+                            if zone.current != nz {
+                                zone.current = nz;
                                 zone.cell.0 = nx;
                                 zone.cell.1 = ny;
+                                clear_shields(zone, &entities);
+                                build_zone(zone, confr);
+                                
+                                if zone.current != zone.target {
+                                    if let Some(wiz) = zone.wizard.take(){
+                                        entities.delete(entities.entity(wiz)).unwrap();
+                                    }
+                                }
+                                should_add_wizard=need_add_wizard(zone);
+                                //add_wizard(zone, &entities, sprite_sheet, transforms, &mut sprites, confr);
+                                show_walls(zone, &cells, &mut tints);
                                 perform_move(zone, transform, player, confr);
-                                should_move_inhabitants = player.action != Some(Action::Charisma);
+                                should_place_inhabitants = true;
+                                
+                            } else {
+                                if zone.cells[nx][ny] < 2 {
+                                    zone.cell.0 = nx;
+                                    zone.cell.1 = ny;
+                                    perform_move(zone, transform, player, confr);
+                                    should_move_inhabitants = player.action != Some(Action::Charisma);
+                                }
                             }
-                        }
-                        player.action=None;
-                    } 
+                            player.action=None;
+                        } 
+                    }
                 }
+                    
                 if should_place_inhabitants {
-                     for (_, zone) in (&mut players, &mut zones).join(){
-                         place_inhabitants(zone, &inhabitants, &mut transforms, confr);
-                     }
+                    for (_, zone) in (&mut players, &mut zones).join(){
+                        place_inhabitants(zone, &inhabitants, &mut transforms, confr);
+                    }
                 }
                 if should_move_inhabitants {
                     for (_, zone) in (&mut players, &mut zones).join(){
                         move_inhabitants(zone, &inhabitants, &mut transforms, confr);
                     }
                 }
-                
+                if should_add_wizard {
+                    let mut h = None;
+                    for sprite in (&mut sprites).join(){
+                        h = Some(sprite.sprite_sheet.clone());
+                        break;
+                    }
+                    let sprite_sheet=&(h.unwrap());
+                    for (_, zone) in (&mut players, &mut zones).join(){
+                        add_wizard(zone, &entities, sprite_sheet, &mut transforms, &mut sprites, confr);
+                    }
+                }
+            
 
             }
         }
