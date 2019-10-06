@@ -1,3 +1,4 @@
+//! Functions to build terrain and entities
 extern crate rand;
 
 use amethyst::{
@@ -16,7 +17,7 @@ use rand::seq::SliceRandom;
 use crate::config::{ArrakisConfig};
 use crate::components::{*};
 
-
+/// load the font for messages
 pub fn load_font(world: &mut World) -> FontHandle{
     world.read_resource::<Loader>().load(
             "font/square.ttf",
@@ -26,6 +27,7 @@ pub fn load_font(world: &mut World) -> FontHandle{
         )
 }
 
+/// initialize the camera
 pub fn initialize_camera(world: &mut World) {
     let mut transform = Transform::default();
     let (width, height) = /*{
@@ -47,7 +49,7 @@ pub fn initialize_camera(world: &mut World) {
         .build();
 }
 
-
+/// create an entity for each cell to show walls
 pub fn initialize_terrain(world: &mut World, sprite_sheet: &Handle<SpriteSheet>) {
     let config = world.read_resource::<ArrakisConfig>().deref().clone();;
     for x in 0..20 {
@@ -58,6 +60,7 @@ pub fn initialize_terrain(world: &mut World, sprite_sheet: &Handle<SpriteSheet>)
 
 }
 
+/// create inhabitant entities
 fn initialize_inhabitants(world: &mut World, sprite_sheet: Handle<SpriteSheet>){
     let sprite_render = SpriteRender {
         sprite_sheet: sprite_sheet.clone(),
@@ -73,6 +76,7 @@ fn initialize_inhabitants(world: &mut World, sprite_sheet: Handle<SpriteSheet>){
     }
 }
 
+/// create player entity and inhabitants of initial zone
 pub fn initialize_player(world: &mut World, sprite_sheet: Handle<SpriteSheet>, font: FontHandle) {
    
     initialize_inhabitants(world, sprite_sheet.clone());
@@ -170,12 +174,14 @@ pub fn initialize_player(world: &mut World, sprite_sheet: Handle<SpriteSheet>, f
 
 }
 
+/// set player position via transform
 pub fn set_player_position(zone: &Zone, transform: &mut Transform, config: &ArrakisConfig){
     transform.set_translation_xyz(zone.cell.0 as f32 * config.cell.width + config.cell.width * 0.5, 
         zone.cell.1 as f32 * config.cell.height + config.cell.height * 0.5,
          0.0);
 }
 
+/// load sprite sheeet
 pub fn load_sprite_sheet(world: &mut World) -> Handle<SpriteSheet> {
     let loader = world.read_resource::<Loader>();
     let texture_handle = {
@@ -198,6 +204,7 @@ pub fn load_sprite_sheet(world: &mut World) -> Handle<SpriteSheet> {
     )
 }
 
+/// create text for player's stats names
 pub fn initialize_text(world: &mut World, font: FontHandle) {
     let config = world.read_resource::<ArrakisConfig>().deref().clone();
     let names_transform = UiTransform::new(
@@ -245,12 +252,14 @@ pub fn is_next_to_inhabitant(zone: &Zone, config: &ArrakisConfig) -> bool {
     false
 }*/
 
+
+/// build a given zone
 pub fn build_zone(zone: &mut Zone, config: &ArrakisConfig){
     let mut n = 0;
 
     for i in zone.current..zone.current+80 {
+        // use sinus of zone number to generate walls
         let mut sin = ((i as f32).sin().abs() * 100000.0) as i32;
-        // println!("sin: {}", sin);
         for _ in 0..5 {
             let c = sin % 10;
             sin /= 10;
@@ -258,14 +267,15 @@ pub fn build_zone(zone: &mut Zone, config: &ArrakisConfig){
             let x = n - (y * config.arena.cell_count);
             n += 1;
             let wall = c < config.arena.wall_threshold && !(x == zone.cell.0 && y == zone.cell.1);
-            //  println!("x: {}, y: {}, wall: {}", x, y, wall);
             zone.cells[x][y] = if wall {2} else {0};
         }
     }
+    // ensure we can reach wizard
     if zone.current==zone.target {
         zone.cells[10][10] = 0;
     }
 
+    // put inhabitants in empty spaces
     let mut empties = vec!();
     for x in 0.. config.arena.cell_count {
         for y in 0 .. config.arena.cell_count {
@@ -286,6 +296,7 @@ pub fn build_zone(zone: &mut Zone, config: &ArrakisConfig){
     }
 }
 
+/// place inhabitants transform
 pub fn place_inhabitants<'s>(zone: &Zone,inhabitants: &ReadStorage<'s,Inhabitant>,positions: &mut WriteStorage<'s,Transform>, config: &ArrakisConfig){
 
     for (&(x,y),(_,transform)) in zone.inhabitants.iter().zip((inhabitants,positions).join()){
@@ -297,7 +308,7 @@ pub fn place_inhabitants<'s>(zone: &Zone,inhabitants: &ReadStorage<'s,Inhabitant
 }
 
 
-
+/// show walls by modifying tints
 pub fn show_walls<'s>(zone: &Zone, cells: &ReadStorage<'s,Cell>, tints: &mut WriteStorage<'s,Tint>){
     for (cell,tint) in (cells,tints).join(){
         if zone.cells[cell.position.0][cell.position.1] == 2{
@@ -308,6 +319,7 @@ pub fn show_walls<'s>(zone: &Zone, cells: &ReadStorage<'s,Cell>, tints: &mut Wri
     }
 }
 
+/// build a wall entity
 fn build_wall(x: usize, y: usize, world: &mut World, sprite_sheet: Handle<SpriteSheet>, config: &ArrakisConfig){
     let mut transform = Transform::default();
     transform.set_translation_xyz(
@@ -332,6 +344,7 @@ fn build_wall(x: usize, y: usize, world: &mut World, sprite_sheet: Handle<Sprite
         .build();
 }
 
+/// build the text for message screens
 pub fn initialize_inter_text(world: &mut World, font: FontHandle, message: &str, config: &ArrakisConfig, anchor: &Anchor, font_ratio: f32) -> Entity {
     let (width, height) = {
             let dim = world.read_resource::<ScreenDimensions>();

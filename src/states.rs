@@ -1,17 +1,18 @@
+//! States
 use amethyst::{ecs::{Join,Entity}, input::*, prelude::*, ui::Anchor};
 
 use crate::build::*;
 use crate::components::{Action, Cell, Inhabitant, Player, CurrentState, Zone};
 use crate::config::ArrakisConfig;
 use std::ops::Deref;
+
+/// Game State
 pub struct Arrakis;
 
 impl SimpleState for Arrakis {
     fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         let world = data.world;
         world.delete_all();
-
-        
 
         world.register::<Cell>();
         world.register::<Inhabitant>();
@@ -30,6 +31,7 @@ impl SimpleState for Arrakis {
 
     fn update(&mut self, data: &mut StateData<'_, GameData<'_, '_>>) -> SimpleTrans {
         let world = &data.world;
+        // change state: dead, restart, help screen, success
         for (player,zone) in (&mut world.write_storage::<Player>(),&world.read_storage::<Zone>()).join() {
             if player.strength == 0 {
                 return Trans::Switch(Box::new(InterTitle::dead()));
@@ -53,16 +55,24 @@ impl SimpleState for Arrakis {
 
 }
 
+/// Shows a message on the screen
 pub struct InterTitle {
+    /// the message
     message: String,
+    /// the key to discard the message
     key: VirtualKeyCode,
+    /// should we restart the game on key press?
     restart: bool,
+    /// text anchor
     anchor: Anchor,
+    /// created entity
     entity: Option<Entity>,
+    /// font ratio
     font_ratio: f32,
 }
 
 impl InterTitle {
+    /// dead message
     pub fn dead() -> InterTitle {
         InterTitle {
             message: "You are DEAD!\nPress R to restart".to_string(),
@@ -74,6 +84,7 @@ impl InterTitle {
         }
     }
 
+    /// success message
     pub fn success() -> InterTitle {
         InterTitle {
             message: "You WIN!\nPress R to have another go".to_string(),
@@ -85,6 +96,7 @@ impl InterTitle {
         }
     }
 
+    /// start message
     pub fn start() -> InterTitle {
         InterTitle {
             message: "Welcome to Arrakis\nPress S to start".to_string(),
@@ -96,6 +108,7 @@ impl InterTitle {
         }
     }
 
+    /// help message
     pub fn help() -> InterTitle {
         InterTitle {
             message: "Arrow keys to move

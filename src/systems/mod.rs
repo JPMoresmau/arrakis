@@ -1,3 +1,4 @@
+//! System module
 mod actions;
 mod moves;
 mod status;

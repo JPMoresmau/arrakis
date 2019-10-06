@@ -1,3 +1,4 @@
+//! Move system
 use amethyst::core::Transform;
 use amethyst::ecs::{Join, Read, ReadStorage, System, WriteStorage,Entities, World};
 use amethyst::input::{InputEvent, StringBindings};
@@ -36,6 +37,7 @@ impl<'s> System<'s> for MoveSystem {
         Read<'s, ArrakisConfig>,
     );
 
+    /// register event channel
     fn setup(&mut self, w: &mut World) {
         <Self::SystemData as DynamicSystemData>::setup(&self.accessor(), w);
         self.reader = Some(
@@ -64,27 +66,28 @@ impl<'s> System<'s> for MoveSystem {
                             "down" => move_down(zone, &config),
                             _ => (zone.current, zone.cell.0, zone.cell.1),
                         };
+                        // the action was a move
                         if zone.cell.0 != nx || zone.cell.1 != ny || zone.current != nz {
-                        
+                            // zone change
                             if zone.current != nz {
                                 zone.current = nz;
                                 zone.cell.0 = nx;
                                 zone.cell.1 = ny;
                                 clear_shields(zone, &entities);
                                 build_zone(zone, confr);
-                                
+                                // delete wizard if we leave target zone
                                 if zone.current != zone.target {
                                     if let Some(wiz) = zone.wizard.take(){
                                         entities.delete(entities.entity(wiz)).unwrap();
                                     }
                                 }
                                 should_add_wizard=need_add_wizard(zone);
-                                //add_wizard(zone, &entities, sprite_sheet, transforms, &mut sprites, confr);
                                 show_walls(zone, &cells, &mut tints);
                                 perform_move(zone, transform, player, confr);
                                 should_place_inhabitants = true;
                                 
                             } else {
+                                // check we can move to the cell
                                 if zone.cells[nx][ny] < 2 {
                                     zone.cell.0 = nx;
                                     zone.cell.1 = ny;
@@ -92,6 +95,7 @@ impl<'s> System<'s> for MoveSystem {
                                     should_move_inhabitants = player.action != Some(Action::Charisma);
                                 }
                             }
+                            // reset previous action
                             player.action=None;
                         } 
                     }
@@ -108,6 +112,7 @@ impl<'s> System<'s> for MoveSystem {
                     }
                 }
                 if should_add_wizard {
+                    // TODO there must be a better way
                     let mut h = None;
                     for sprite in (&mut sprites).join(){
                         h = Some(sprite.sprite_sheet.clone());
@@ -125,6 +130,7 @@ impl<'s> System<'s> for MoveSystem {
     }
 }
 
+/// move right possibly changing zone
 fn move_right<'s>(zone: &mut Zone, config: &Read<'s, ArrakisConfig>) -> (i32, usize, usize) {
     if zone.cell.0 == config.arena.cell_count - 1 {
         (zone.current + 10, 0, zone.cell.1)
@@ -133,6 +139,7 @@ fn move_right<'s>(zone: &mut Zone, config: &Read<'s, ArrakisConfig>) -> (i32, us
     }
 }
 
+/// move left possibly changing zone
 fn move_left<'s>(zone: &mut Zone, config: &Read<'s, ArrakisConfig>) -> (i32, usize, usize) {
     if zone.cell.0 == 0 {
         (zone.current - 10, config.arena.cell_count - 1, zone.cell.1)
@@ -141,6 +148,7 @@ fn move_left<'s>(zone: &mut Zone, config: &Read<'s, ArrakisConfig>) -> (i32, usi
     }
 }
 
+/// move up possibly changing zone
 fn move_up<'s>(zone: &mut Zone, config: &Read<'s, ArrakisConfig>) -> (i32, usize, usize) {
     if zone.cell.1 == config.arena.cell_count - 1 {
         (zone.current + 100, zone.cell.0, 0)
@@ -149,6 +157,7 @@ fn move_up<'s>(zone: &mut Zone, config: &Read<'s, ArrakisConfig>) -> (i32, usize
     }
 }
 
+/// move down possibly changing zone
 fn move_down<'s>(zone: &mut Zone, config: &Read<'s, ArrakisConfig>) -> (i32, usize, usize) {
     if zone.cell.1 == 0 {
         (zone.current - 100, zone.cell.0, config.arena.cell_count - 1)

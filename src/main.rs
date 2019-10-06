@@ -1,3 +1,4 @@
+//! Entry point
 use amethyst::{
     core::transform::TransformBundle,
     input::{InputBundle, StringBindings},
@@ -20,6 +21,7 @@ mod components;
 use crate::states::{InterTitle};
 use crate::config::ArrakisConfig;
 
+/// Game entry point
 fn main() -> amethyst::Result<()> {
     amethyst::start_logger(Default::default());
 

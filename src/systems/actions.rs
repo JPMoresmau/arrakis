@@ -1,3 +1,4 @@
+//!   User actions system
 use amethyst::core::Transform;
 use amethyst::ecs::{Join, Read, ReadStorage, System, WriteStorage, Entities, World};
 use amethyst::input::{InputEvent, StringBindings};
@@ -36,6 +37,7 @@ impl<'s> System<'s> for ActionSystem {
         Read<'s, ArrakisConfig>,
     );
 
+    /// register event channel
     fn setup(&mut self, w: &mut World) {
         <Self::SystemData as DynamicSystemData>::setup(&self.accessor(), w);
         self.reader = Some(
@@ -44,6 +46,7 @@ impl<'s> System<'s> for ActionSystem {
         );
     }
 
+    /// listen to actions other than move
     fn run(
         &mut self,
         (mut players, mut zones, mut transforms, mut sprites, mut shields, cells, mut tints, entities, event, config): Self::SystemData,

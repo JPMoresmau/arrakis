@@ -1,5 +1,7 @@
+//! Configuration
 use serde::{Deserialize,Serialize};
 
+/// Main configuration
 #[derive(Debug, Default, Deserialize, Serialize, Clone)]
 pub struct ArrakisConfig {
     pub arena: ArenaConfig,
@@ -12,6 +14,7 @@ pub struct ArrakisConfig {
     pub player: PlayerConfig,
 }
 
+/// Arena or zone config
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ArenaConfig {
     pub height: f32,
@@ -31,6 +34,7 @@ impl Default for ArenaConfig {
     }
 }
 
+/// Cell config
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct CellConfig {
     pub height: f32,
@@ -46,6 +50,7 @@ impl Default for CellConfig {
     }
 }
 
+/// Status area config
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct StatusConfig {
     pub height: f32,
@@ -67,6 +72,7 @@ impl Default for StatusConfig {
     }
 }
 
+/// Armourer encounter config
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ArmourerConfig {
     pub charisma: u32,
@@ -84,6 +90,7 @@ impl Default for ArmourerConfig {
     }
 }
 
+/// Magician encounter config
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct MagicianConfig {
     pub charisma: u32,
@@ -103,6 +110,7 @@ impl Default for MagicianConfig {
     }
 }
 
+//// Start player config
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct PlayerConfig {
     pub charisma: u32,
