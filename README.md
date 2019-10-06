@@ -6,6 +6,7 @@ Arrakis is a mini role-playing/adventure game. The goal? Walk through the street
 
 However, Arrakis is a hot place and every move cost you strength. Don't die! Look out for fountains to get back your strength, and you can also avail of armourers and magicians in the streets, that can help you. Find some gold to buy powers from them, and have enough gold to pay the Wizard of Arrakis for his teachings!
 
+![Screenshot](screenshot1.png "Arrakis screenshot")
 
 ## Origins
 
