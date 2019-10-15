@@ -35,7 +35,7 @@ The game is programmed in Rust using the Amethyst framework. This is my first bi
 
 `config.ron` contains a few configuration entries so you can tweak the game without touching the code.
 
-There is no sound yet, I may add later.
+There are some pretty basic sound effects based on encounters or actions.
 
 Each cell in a zone is an entity, maybe that's horrible design, I'll check out [amethyst-tiles](https://github.com/amethyst/amethyst/tree/master/amethyst_tiles).
 
