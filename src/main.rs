@@ -1,5 +1,6 @@
 //! Entry point
 use amethyst::{
+    audio::AudioBundle,
     core::transform::TransformBundle,
     input::{InputBundle, StringBindings},
     prelude::*,
@@ -13,6 +14,7 @@ use amethyst::{
 };
 
 mod arrakis;
+mod audio;
 mod build;
 mod config;
 mod states;
@@ -50,6 +52,7 @@ fn main() -> amethyst::Result<()> {
         .with_bundle(TransformBundle::new())?
         .with_bundle(input_bundle)?
         .with_bundle(UiBundle::<StringBindings>::new())?
+        .with_bundle(AudioBundle::default())?
         .with(systems::StatusSystem, "status_system",&[])
         .with(systems::MoveSystem::new(), "move_system",&["input_system"])
         .with(systems::ActionSystem::new(), "action_system",&["input_system"])

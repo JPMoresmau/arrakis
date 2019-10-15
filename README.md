@@ -39,4 +39,4 @@ There is no sound yet, I may add later.
 
 Each cell in a zone is an entity, maybe that's horrible design, I'll check out [amethyst-tiles](https://github.com/amethyst/amethyst/tree/master/amethyst_tiles).
 
-Icons I got from https://opengameart.org/content/dungeon-crawl-32x32-tiles, I believe they are free of rights. Thanks for sharing!
+Icons I got from https://opengameart.org/content/dungeon-crawl-32x32-tiles, I believe they are free of rights. Sounds from https://opengameart.org/content/rpg-sound-pack. Thanks for sharing!

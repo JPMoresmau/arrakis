@@ -1,6 +1,9 @@
 //! Move system
+use amethyst::assets::AssetStorage;
+use amethyst::audio::{output::Output, Source};
+
 use amethyst::core::Transform;
-use amethyst::ecs::{Join, Read, ReadStorage, System, WriteStorage,Entities, World};
+use amethyst::ecs::{Join, Read, ReadExpect, ReadStorage, System, WriteStorage,Entities, World};
 use amethyst::input::{InputEvent, StringBindings};
 use amethyst::renderer::{
         resources::Tint,SpriteRender};
@@ -9,8 +12,9 @@ use amethyst::shrev::{EventChannel, ReaderId};
 use std::ops::Deref;
 
 use crate::arrakis::{perform_move, move_inhabitants, clear_shields, add_wizard, need_add_wizard};
+use crate::audio::{play_wall_sound, play_sound, Sounds, SoundHandler};
 use crate::build::{build_zone, show_walls, place_inhabitants};
-use crate::components::{Cell, Player, Zone, Inhabitant, Action, CurrentState};
+use crate::components::{Cell, CellType, Player, Zone, Inhabitant, Action, CurrentState};
 use crate::config::ArrakisConfig;
 
 pub struct MoveSystem {
@@ -35,6 +39,9 @@ impl<'s> System<'s> for MoveSystem {
         Entities<'s>,
         Read<'s, EventChannel<InputEvent<StringBindings>>>,
         Read<'s, ArrakisConfig>,
+        Read<'s, AssetStorage<Source>>,
+        ReadExpect<'s, Sounds>,
+        Option<Read<'s, Output>>,
     );
 
     /// register event channel
@@ -48,13 +55,16 @@ impl<'s> System<'s> for MoveSystem {
 
     fn run(
         &mut self,
-        (mut transforms, mut players, mut zones, cells, mut tints, inhabitants, mut sprites, entities, event, config): Self::SystemData,
+        (mut transforms, mut players, mut zones, cells, mut tints, inhabitants, 
+            mut sprites, entities, event, config, storage, sounds, 
+            audio_output): Self::SystemData,
     ) {
         for event in event.read(self.reader.as_mut().unwrap()) {
             if let InputEvent::ActionPressed(action) = event {
                 let mut should_move_inhabitants = false;
                 let mut should_place_inhabitants = false;
                 let mut should_add_wizard = false;
+                let mut has_moved = false;
                 let confr=&config.deref();
                 for (transform, player, zone) in (&mut transforms, &mut players, &mut zones).join(){
                     if player.current_state ==  CurrentState::Gameplay {
@@ -85,6 +95,7 @@ impl<'s> System<'s> for MoveSystem {
                                 show_walls(zone, &cells, &mut tints);
                                 perform_move(zone, transform, player, confr);
                                 should_place_inhabitants = true;
+                                has_moved = true;
                                 
                             } else {
                                 // check we can move to the cell
@@ -93,6 +104,9 @@ impl<'s> System<'s> for MoveSystem {
                                     zone.cell.1 = ny;
                                     perform_move(zone, transform, player, confr);
                                     should_move_inhabitants = player.action != Some(Action::Charisma);
+                                    has_moved = true;
+                                } else {
+                                    play_wall_sound(&*sounds, &storage, audio_output.as_ref().map(|o| o.deref()));
                                 }
                             }
                             // reset previous action
@@ -123,7 +137,19 @@ impl<'s> System<'s> for MoveSystem {
                         add_wizard(zone, &entities, sprite_sheet, &mut transforms, &mut sprites, confr);
                     }
                 }
-            
+                if has_moved {
+                   for (_, zone) in (&mut players, &mut zones).join(){
+                       let oh = match zone.current_type {
+                           CellType::Fountain => Some(SoundHandler::new(&|s: &'s Sounds| &s.fountain_sfx)),
+                           CellType::Armourer => Some(SoundHandler::new(&|s: &'s Sounds| &s.armourer_sfx)),
+                           CellType::Magician => Some(SoundHandler::new(&|s: &'s Sounds| &s.magician_sfx)),
+                           _ => None,
+                       };
+                       if let Some(h) = oh {
+                           play_sound(&*sounds, &storage, audio_output.as_ref().map(|o| o.deref()),&h.handle_func);
+                       }
+                   }
+                }
 
             }
         }
@@ -165,3 +191,4 @@ fn move_down<'s>(zone: &mut Zone, config: &Read<'s, ArrakisConfig>) -> (i32, usi
         (zone.current, zone.cell.0, zone.cell.1 - 1)
     }
 }
+

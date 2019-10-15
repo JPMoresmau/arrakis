@@ -4,6 +4,7 @@ use amethyst::{ecs::{Join,Entity}, input::*, prelude::*, ui::Anchor};
 use crate::build::*;
 use crate::components::{Action, Cell, Inhabitant, Player, CurrentState, Zone};
 use crate::config::ArrakisConfig;
+use crate::audio::{initialize_audio};
 use std::ops::Deref;
 
 /// Game State
@@ -16,13 +17,14 @@ impl SimpleState for Arrakis {
 
         world.register::<Cell>();
         world.register::<Inhabitant>();
+        
 
         let sprite_sheet_handle = load_sprite_sheet(world);
 
         let font = load_font(world);
         initialize_camera(world);
 
-       
+      
        
         initialize_terrain(world, &sprite_sheet_handle);
         initialize_player(world, sprite_sheet_handle, font.clone());
@@ -133,6 +135,8 @@ Press R to resume"
 impl SimpleState for InterTitle {
     fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         let world = data.world;
+        initialize_audio(world);
+
         if self.restart{
             world.delete_all();
         }
