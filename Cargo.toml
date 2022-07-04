@@ -5,9 +5,9 @@ authors = ["JP Moresmau"]
 edition = "2018"
 
 [dependencies]
-rand = "0.7.2"
-serde = { version = "1.0.101", features = ["derive"] }
+rand = "0.8.5"
+serde = { version = "1.0.138", features = ["derive"] }
 
 [dependencies.amethyst]
-version = "0.13.2"
+version = "0.15.3"
 features = ["vulkan"]
